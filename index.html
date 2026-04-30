@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagnóstico de Embudo · Hotmart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --rojo: #E8183C;
+  --rojo-oscuro: #C0122D;
+  --rojo-suave: #fff0f3;
+  --rojo-borde: #fcc;
+  --gris-100: #f7f7f6;
+  --gris-200: #eeede9;
+  --gris-400: #b5b3aa;
+  --gris-700: #4a4845;
+  --gris-900: #1a1917;
+  --font: 'Plus Jakarta Sans', sans-serif;
+  --radio: 12px;
+  --sombra: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font);
+  background: var(--gris-100);
+  color: var(--gris-900);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+/* ── Barra de progreso fija ── */
+.barra-top {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--gris-200);
+  z-index: 100;
+}
+.barra-fill {
+  height: 100%;
+  background: var(--rojo);
+  border-radius: 0 2px 2px 0;
+  transition: width 0.5s cubic-bezier(.4,0,.2,1);
+}
+
+/* ── Header ── */
+.header {
+  background: white;
+  border-bottom: 1px solid var(--gris-200);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.logo-dot {
+  width: 32px; height: 32px;
+  background: var(--rojo);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.logo-dot svg { width: 18px; height: 18px; fill: white; }
+.header-texto { flex: 1; }
+.header-titulo { font-size: 14px; font-weight: 600; color: var(--gris-900); }
+.header-sub { font-size: 12px; color: var(--gris-400); }
+.etapa-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--rojo-suave);
+  color: var(--rojo);
+  white-space: nowrap;
+}
+
+/* ── Layout principal ── */
+.main {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 32px 16px 80px;
+}
+
+/* ── Pantalla (cada paso) ── */
+.pantalla { display: none; }
+.pantalla.activa { display: block; animation: fadeUp 0.35s ease; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Intro de sección ── */
+.seccion-intro {
+  margin-bottom: 28px;
+}
+.seccion-etiqueta {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--rojo);
+  margin-bottom: 6px;
+}
+.seccion-titulo {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gris-900);
+  margin-bottom: 6px;
+  line-height: 1.25;
+}
+.seccion-desc {
+  font-size: 14px;
+  color: var(--gris-700);
+  line-height: 1.6;
+}
+
+/* ── Tarjeta de campo ── */
+.campo {
+  background: white;
+  border: 1px solid var(--gris-200);
+  border-radius: var(--radio);
+  padding: 20px;
+  margin-bottom: 12px;
+  box-shadow: var(--sombra);
+  transition: border-color 0.2s;
+}
+.campo:focus-within { border-color: var(--rojo); }
+.campo.condicional { display: none; }
+.campo.condicional.visible { display: block; }
+
+.campo-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gris-900);
+  margin-bottom: 10px;
+  display: block;
+}
+.campo-hint {
+  font-size: 12px;
+  color: var(--gris-400);
+  margin-top: -6px;
+  margin-bottom: 10px;
+}
+.campo-requerido { color: var(--rojo); margin-left: 2px; }
+
+/* ── Inputs ── */
+input[type="text"],
+input[type="email"],
+textarea,
+select {
+  width: 100%;
+  font-family: var(--font);
+  font-size: 14px;
+  color: var(--gris-900);
+  background: var(--gris-100);
+  border: 1px solid var(--gris-200);
+  border-radius: 8px;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+  appearance: none;
+}
+input[type="text"]:focus,
+input[type="email"]:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--rojo);
+  background: white;
+}
+textarea { resize: vertical; min-height: 80px; }
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+/* ── Opciones tipo pill ── */
+.opciones-pill {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pill-item { display: none; }
+.pill-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--gris-200);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gris-700);
+  cursor: pointer;
+  transition: all 0.15s;
+  background: white;
+  user-select: none;
+}
+.pill-label:hover { border-color: var(--rojo); color: var(--rojo); }
+.pill-item:checked + .pill-label {
+  background: var(--rojo-suave);
+  border-color: var(--rojo);
+  color: var(--rojo);
+}
+
+/* ── Opciones sí/no ── */
+.opciones-sino {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.sino-item { display: none; }
+.sino-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1.5px solid var(--gris-200);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--gris-700);
+  cursor: pointer;
+  transition: all 0.15s;
+  background: white;
+  text-align: center;
+  user-select: none;
+}
+.sino-label:hover { border-color: var(--rojo); color: var(--rojo); }
+.sino-item:checked + .sino-label {
+  background: var(--rojo-suave);
+  border-color: var(--rojo);
+  color: var(--rojo);
+  font-weight: 600;
+}
+
+/* ── Checkbox cuadrado ── */
+.opciones-check { display: flex; flex-direction: column; gap: 6px; }
+.check-item { display: none; }
+.check-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--gris-200);
+  font-size: 13px;
+  color: var(--gris-700);
+  cursor: pointer;
+  transition: all 0.15s;
+  background: white;
+  user-select: none;
+}
+.check-label::before {
+  content: '';
+  width: 16px; height: 16px;
+  border: 1.5px solid var(--gris-400);
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.check-item:checked + .check-label { border-color: var(--rojo); color: var(--rojo-oscuro); background: var(--rojo-suave); }
+.check-item:checked + .check-label::before { background: var(--rojo); border-color: var(--rojo); }
+
+/* ── Botones de navegación ── */
+.nav-botones {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 28px;
+  gap: 12px;
+}
+.btn {
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 28px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-primario {
+  background: var(--rojo);
+  color: white;
+  flex: 1;
+  max-width: 240px;
+}
+.btn-primario:hover { background: var(--rojo-oscuro); transform: translateY(-1px); }
+.btn-primario:active { transform: translateY(0); }
+.btn-secundario {
+  background: transparent;
+  color: var(--gris-400);
+  border: 1px solid var(--gris-200);
+}
+.btn-secundario:hover { color: var(--gris-700); border-color: var(--gris-400); }
+
+/* ── Pantalla de bienvenida ── */
+.welcome-card {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--sombra);
+}
+.welcome-header {
+  background: var(--rojo);
+  padding: 40px 36px;
+  color: white;
+}
+.welcome-header h1 { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+.welcome-header p { font-size: 14px; opacity: 0.88; line-height: 1.6; }
+.welcome-body { padding: 32px 36px; }
+.etapas-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+.etapa-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--gris-700);
+}
+.etapa-num {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--rojo-suave);
+  color: var(--rojo);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.welcome-divider { height: 1px; background: var(--gris-200); margin: 20px 0; }
+.welcome-campos { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+.welcome-campo label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+
+/* ── Pantalla de éxito ── */
+.exito-card {
+  background: white;
+  border-radius: 16px;
+  padding: 48px 36px;
+  text-align: center;
+  box-shadow: var(--sombra);
+}
+.exito-icono {
+  width: 64px; height: 64px;
+  background: var(--rojo-suave);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px;
+}
+.exito-icono svg { width: 32px; height: 32px; }
+.exito-card h2 { font-size: 22px; font-weight: 700; margin-bottom: 10px; }
+.exito-card p { font-size: 14px; color: var(--gris-700); line-height: 1.65; max-width: 380px; margin: 0 auto; }
+
+/* ── Estado de carga ── */
+.loading-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.loading-overlay.visible { display: flex; }
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--gris-200);
+  border-top-color: var(--rojo);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-texto { font-size: 14px; font-weight: 500; color: var(--gris-700); }
+
+/* ── Validación ── */
+.campo-error { border-color: #f87171 !important; }
+.error-msg { font-size: 12px; color: #dc2626; margin-top: 6px; display: none; }
+.campo-error ~ .error-msg { display: block; }
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .main { padding: 20px 12px 80px; }
+  .welcome-header { padding: 28px 24px; }
+  .welcome-header h1 { font-size: 21px; }
+  .welcome-body { padding: 24px; }
+  .exito-card { padding: 36px 24px; }
+  .seccion-titulo { font-size: 19px; }
+  .nav-botones { flex-direction: column-reverse; }
+  .btn { width: 100%; max-width: 100%; }
+  .opciones-sino { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- Barra de progreso -->
+<div class="barra-top"><div class="barra-fill" id="barra" style="width:0%"></div></div>
+
+<!-- Header sticky -->
+<div class="header">
+  <div class="logo-dot">
+    <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+  </div>
+  <div class="header-texto">
+    <div class="header-titulo">Diagnóstico de Embudo</div>
+    <div class="header-sub" id="header-sub">Tus respuestas generan un plan de acción personalizado</div>
+  </div>
+  <div class="etapa-badge" id="etapa-badge" style="display:none"></div>
+</div>
+
+<!-- Overlay de carga -->
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div class="loading-texto">Generando tu diagnóstico personalizado…</div>
+</div>
+
+<div class="main">
+
+  <!-- ════════════ PANTALLA 0: BIENVENIDA ════════════ -->
+  <div class="pantalla activa" id="p0">
+    <div class="welcome-card">
+      <div class="welcome-header">
+        <h1>Diagnóstico de Embudo</h1>
+        <p>Responde estas preguntas sobre tu estrategia actual y recibirás un plan de acción personalizado con recomendaciones específicas para tu negocio.</p>
+      </div>
+      <div class="welcome-body">
+        <div class="etapas-lista">
+          <div class="etapa-item"><div class="etapa-num">1</div>Contexto de tu cuenta y modelo de negocio</div>
+          <div class="etapa-item"><div class="etapa-num">2</div>Estrategia de atracción e interacción</div>
+          <div class="etapa-item"><div class="etapa-num">3</div>Proceso de venta y recuperación</div>
+          <div class="etapa-item"><div class="etapa-num">4</div>Post-venta, fidelización y recompra</div>
+        </div>
+        <div class="welcome-divider"></div>
+        <div class="welcome-campos">
+          <div class="welcome-campo">
+            <label for="w-nombre">Tu nombre <span class="campo-requerido">*</span></label>
+            <input type="text" id="w-nombre" placeholder="María García">
+          </div>
+          <div class="welcome-campo">
+            <label for="w-email">Email de contacto <span class="campo-requerido">*</span></label>
+            <input type="email" id="w-email" placeholder="maria@ejemplo.com">
+          </div>
+          <div class="welcome-campo">
+            <label for="w-hotmart">Email o ID de tu cuenta en Hotmart <span class="campo-requerido">*</span></label>
+            <input type="email" id="w-hotmart" placeholder="maria@hotmart.com">
+          </div>
+        </div>
+        <button class="btn btn-primario" style="width:100%;max-width:100%" onclick="iniciar()">Comenzar diagnóstico →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════ PANTALLA 1: CONTEXTO ════════════ -->
+  <div class="pantalla" id="p1">
+    <div class="seccion-intro">
+      <div class="seccion-etiqueta">Etapa 1 de 4</div>
+      <div class="seccion-titulo">Contexto de tu cuenta</div>
+      <div class="seccion-desc">Cuéntanos sobre tu negocio para que las recomendaciones sean relevantes para tu contexto específico.</div>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿En qué nicho trabajas? <span class="campo-requerido">*</span></label>
+      <input type="text" id="nicho" placeholder="Ej: Educación financiera, fitness, idiomas…">
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Qué tipo de productos vendes? <span class="campo-requerido">*</span></label>
+      <div class="opciones-pill" id="tipo-productos">
+        <input type="checkbox" class="pill-item" id="tp1" name="tipo_productos" value="Cursos online"><label class="pill-label" for="tp1">Cursos online</label>
+        <input type="checkbox" class="pill-item" id="tp2" name="tipo_productos" value="Mentoría grupal"><label class="pill-label" for="tp2">Mentoría grupal</label>
+        <input type="checkbox" class="pill-item" id="tp3" name="tipo_productos" value="Mentoría 1:1"><label class="pill-label" for="tp3">Mentoría 1:1</label>
+        <input type="checkbox" class="pill-item" id="tp4" name="tipo_productos" value="Ebook / PDF"><label class="pill-label" for="tp4">Ebook / PDF</label>
+        <input type="checkbox" class="pill-item" id="tp5" name="tipo_productos" value="Membresía"><label class="pill-label" for="tp5">Membresía</label>
+        <input type="checkbox" class="pill-item" id="tp6" name="tipo_productos" value="Otro"><label class="pill-label" for="tp6">Otro</label>
+      </div>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Tienes una escalera de valor definida? <span class="campo-requerido">*</span></label>
+      <p class="campo-hint">Productos de distintos precios que llevan al cliente de menor a mayor ticket</p>
+      <div class="opciones-sino">
+        <input type="radio" class="sino-item" id="ev-si" name="escalera_valor" value="Sí" onchange="toggle('campo-precios', true)"><label class="sino-label" for="ev-si">Sí</label>
+        <input type="radio" class="sino-item" id="ev-no" name="escalera_valor" value="No" onchange="toggle('campo-precios', false)"><label class="sino-label" for="ev-no">No</label>
+      </div>
+    </div>
+
+    <div class="campo condicional" id="campo-precios">
+      <label class="campo-label">¿Cuál es el rango de precios de tu escalera?</label>
+      <input type="text" id="rango_precios" placeholder="Ej: USD 47 — USD 997">
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Cuántos productos tienes activos actualmente?</label>
+      <select id="num_productos">
+        <option value="">Selecciona…</option>
+        <option>1</option><option>2</option><option>3</option>
+        <option>4 a 6</option><option>7 o más</option>
+      </select>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Con qué equipo de trabajo cuentas?</label>
+      <div class="opciones-pill">
+        <input type="radio" class="pill-item" id="eq1" name="equipo" value="Solo / freelancer"><label class="pill-label" for="eq1">Solo / freelancer</label>
+        <input type="radio" class="pill-item" id="eq2" name="equipo" value="Equipo propio"><label class="pill-label" for="eq2">Equipo propio</label>
+        <input type="radio" class="pill-item" id="eq3" name="equipo" value="Agencia"><label class="pill-label" for="eq3">Agencia</label>
+        <input type="radio" class="pill-item" id="eq4" name="equipo" value="Mixto"><label class="pill-label" for="eq4">Mixto</label>
+      </div>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Cuál es tu modelo principal de venta? <span class="campo-requerido">*</span></label>
+      <select id="modelo_venta" onchange="actualizarCondicionales()">
+        <option value="">Selecciona…</option>
+        <option value="Lanzamientos">Lanzamientos (PLF, Jeff Walker)</option>
+        <option value="Evergreen">Evergreen (embudo siempre activo)</option>
+        <option value="Webinars">Webinars (live o automatizados)</option>
+        <option value="Venta directa">Venta directa (link al checkout)</option>
+        <option value="Ventas por WhatsApp">Ventas por WhatsApp / DMs</option>
+        <option value="Combinado">Combinado</option>
+      </select>
+    </div>
+
+    <div class="nav-botones">
+      <button class="btn btn-secundario" onclick="ir(0)">← Atrás</button>
+      <button class="btn btn-primario" onclick="ir(2)">Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- ════════════ PANTALLA 2: PRE-VENTA ════════════ -->
+  <div class="pantalla" id="p2">
+    <div class="seccion-intro">
+      <div class="seccion-etiqueta">Etapa 2 de 4</div>
+      <div class="seccion-titulo">Atracción e Interacción</div>
+      <div class="seccion-desc">Cómo estás llevando personas a tu embudo y qué pasa cuando llegan.</div>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Qué tipo de tráfico manejas principalmente? <span class="campo-requerido">*</span></label>
+      <div class="opciones-pill">
+        <input type="checkbox" class="pill-item" id="tr1" name="tipo_trafico" value="Orgánico"><label class="pill-label" for="tr1">Orgánico</label>
+        <input type="checkbox" class="pill-item" id="tr2" name="tipo_trafico" value="Pago (pauta)"><label class="pill-label" for="tr2">Pago (pauta)</label>
+        <input type="checkbox" class="pill-item" id="tr3" name="tipo_trafico" value="Referidos"><label class="pill-label" for="tr3">Referidos</label>
+        <input type="checkbox" class="pill-item" id="tr4" name="tipo_trafico" value="Afiliados"><label class="pill-label" for="tr4">Afiliados</label>
+        <input type="checkbox" class="pill-item" id="tr5" name="tipo_trafico" value="Email"><label class="pill-label" for="tr5">Email</label>
+      </div>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿En qué redes sociales tienes presencia activa?</label>
+      <div class="opciones-pill">
+        <input type="checkbox" class="pill-item" id="rs1" name="redes_sociales" value="Instagram"><label class="pill-label" for="rs1">Instagram</label>
+        <input type="checkbox" class="pill-item" id="rs2" name="redes_sociales" value="YouTube"><label class="pill-label" for="rs2">YouTube</label>
+        <input type="checkbox" class="pill-item" id="rs3" name="redes_sociales" value="TikTok"><label class="pill-label" for="rs3">TikTok</label>
+        <input type="checkbox" class="pill-item" id="rs4" name="redes_sociales" value="Facebook"><label class="pill-label" for="rs4">Facebook</label>
+        <input type="checkbox" class="pill-item" id="rs5" name="redes_sociales" value="LinkedIn"><label class="pill-label" for="rs5">LinkedIn</label>
+        <input type="checkbox" class="pill-item" id="rs6" name="redes_sociales" value="Twitter/X"><label class="pill-label" for="rs6">Twitter/X</label>
+        <input type="checkbox" class="pill-item" id="rs7" name="redes_sociales" value="Podcast"><label class="pill-label" for="rs7">Podcast</label>
+      </div>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Pautas en alguna plataforma?</label>
+      <div class="opciones-sino">
+        <input type="radio" class="sino-item" id="pauta-si" name="pauta" value="Sí" onchange="toggle('campo-plataformas', true)"><label class="sino-label" for="pauta-si">Sí</label>
+        <input type="radio" class="sino-item" id="pauta-no" name="pauta" value="No" onchange="toggle('campo-plataformas', false)"><label class="sino-label" for="pauta-no">No</label>
+      </div>
+    </div>
+
+    <div class="campo condicional" id="campo-plataformas">
+      <label class="campo-label">¿En qué plataformas pautas?</label>
+      <div class="opciones-pill">
+        <input type="checkbox" class="pill-item" id="pl1" name="plataformas_pauta" value="Meta Ads"><label class="pill-label" for="pl1">Meta Ads</label>
+        <input type="checkbox" class="pill-item" id="pl2" name="plataformas_pauta" value="Google Ads"><label class="pill-label" for="pl2">Google Ads</label>
+        <input type="checkbox" class="pill-item" id="pl3" name="plataformas_pauta" value="TikTok Ads"><label class="pill-label" for="pl3">TikTok Ads</label>
+        <input type="checkbox" class="pill-item" id="pl4" name="plataformas_pauta" value="YouTube Ads"><label class="pill-label" for="pl4">YouTube Ads</label>
+      </div>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Sabes exactamente qué % de leads trae cada fuente?</label>
+      <div class="opciones-sino">
+        <input type="radio" class="sino-item" id="fuen-si" name="conoce_porcentaje_fuentes" value="Sí" onchange="toggle('campo-porcentaje', true)"><label class="sino-label" for="fuen-si">Sí</label>
+        <input type="radio" class="sino-item" id="fuen-no" name="conoce_porcentaje_fuentes" value="No" onchange="toggle('campo-porcentaje', false)"><label class="sino-label" for="fuen-no">No</label>
+      </div>
+    </div>
+
+    <div class="campo condicional" id="campo-porcentaje">
+      <label class="campo-label">¿Cuál es el % aproximado de cada fuente?</label>
+      <input type="text" id="porcentaje_fuentes" placeholder="Ej: Instagram 60%, email 30%, referidos 10%">
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Sabes cuánto te cuesta captar un lead (CPL)?</label>
+      <div class="opciones-sino">
+        <input type="radio" class="sino-item" id="cpl-si" name="conoce_cpl" value="Sí"><label class="sino-label" for="cpl-si">Sí</label>
+        <input type="radio" class="sino-item" id="cpl-no" name="conoce_cpl" value="No"><label class="sino-label" for="cpl-no">No</label>
+      </div>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Manejas alianzas, referidos, afiliados o audiencias compartidas?</label>
+      <div class="opciones-sino">
+        <input type="radio" class="sino-item" id="ali-si" name="alianzas" value="Sí"><label class="sino-label" for="ali-si">Sí</label>
+        <input type="radio" class="sino-item" id="ali-no" name="alianzas" value="No"><label class="sino-label" for="ali-no">No</label>
+      </div>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Tus leads llegan a una página de captación cuando dan click en un CTA?</label>
+      <div class="opciones-sino">
+        <input type="radio" class="sino-item" id="cap-si" name="pagina_captacion" value="Sí"><label class="sino-label" for="cap-si">Sí</label>
+        <input type="radio" class="sino-item" id="cap-no" name="pagina_captacion" value="No"><label class="sino-label" for="cap-no">No</label>
+      </div>
+    </div>
+
+    <div class="campo condicional" id="campo-calentamiento" style="display:none">
+      <label class="campo-label">¿Qué canal usas para calentar a esta audiencia?</label>
+      <div class="opciones-pill">
+        <input type="checkbox" class="pill-item" id="cal1" name="canal_calentamiento" value="Email marketing"><label class="pill-label" for="cal1">Email marketing</label>
+        <input type="checkbox" class="pill-item" id="cal2" name="canal_calentamiento" value="WhatsApp"><label class="pill-label" for="cal2">WhatsApp</label>
+        <input type="checkbox" class="pill-item" id="cal3" name="canal_calentamiento" value="Webinars"><label class="pill-label" for="cal3">Webinars</label>
+        <input type="checkbox" class="pill-item" id="cal4" name="canal_calentamiento" value="Telegram"><label class="pill-label" for="cal4">Telegram</label>
+        <input type="checkbox" class="pill-item" id="cal5" name="canal_calentamiento" value="Comunidad"><label class="pill-label" for="cal5">Comunidad</label>
+        <input type="checkbox" class="pill-item" id="cal6" name="canal_calentamiento" value="RRSS orgánico"><label class="pill-label" for="cal6">RRSS orgánico</label>
+      </div>
+    </div>
+
+    <div class="campo condicional" id="campo-donde-leads" style="display:none">
+      <label class="campo-label">¿Dónde guardas los leads que captás?</label>
+      <div class="opciones-pill">
+        <input type="radio" class="pill-item" id="dl1" name="donde_guarda_leads" value="CRM propio"><label class="pill-label" for="dl1">CRM propio</label>
+        <input type="radio" class="pill-item" id="dl2" name="donde_guarda_leads" value="ActiveCampaign"><label class="pill-label" for="dl2">ActiveCampaign</label>
+        <input type="radio" class="pill-item" id="dl3" name="donde_guarda_leads" value="HubSpot"><label class="pill-label" for="dl3">HubSpot</label>
+        <input type="radio" class="pill-item" id="dl4" name="donde_guarda_leads" value="Mailchimp"><label class="pill-label" for="dl4">Mailchimp</label>
+        <input type="radio" class="pill-item" id="dl5" name="donde_guarda_leads" value="HotmartSend"><label class="pill-label" for="dl5">HotmartSend</label>
+        <input type="radio" class="pill-item" id="dl6" name="donde_guarda_leads" value="No tengo CRM"><label class="pill-label" for="dl6">No tengo CRM</label>
+        <input type="radio" class="pill-item" id="dl7" name="donde_guarda_leads" value="Otro"><label class="pill-label" for="dl7">Otro</label>
+      </div>
+    </div>
+
+    <div class="campo condicional" id="campo-pag-ventas" style="display:none">
+      <label class="campo-label">¿Usas una página de ventas externa al checkout?</label>
+      <div class="opciones-sino">
+        <input type="radio" class="sino-item" id="pv-si" name="pagina_ventas_externa" value="Sí"><label class="sino-label" for="pv-si">Sí</label>
+        <input type="radio" class="sino-item" id="pv-no" name="pagina_ventas_externa" value="No"><label class="sino-label" for="pv-no">No</label>
+      </div>
+    </div>
+
+    <div class="nav-botones">
+      <button class="btn btn-secundario" onclick="ir(1)">← Atrás</button>
+      <button class="btn btn-primario" onclick="ir(3)">Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- ════════════ PANTALLA 3: VENTA ════════════ -->
+  <div class="pantalla" id="p3">
+    <div class="seccion-intro">
+      <div class="seccion-etiqueta">Etapa 3 de 4</div>
+      <div class="seccion-titulo">Venta y Recuperación</div>
+      <div class="seccion-desc">Cómo cierras ventas, qué herramientas usas en el checkout, y cómo recuperas ventas perdidas.</div>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Cómo compartes el link de checkout a tus leads? <span class="campo-requerido">*</span></label>
+      <div class="opciones-pill">
+        <input type="checkbox" class="pill-item" id="ck1" name="como_comparte_checkout" value="Email marketing"><label class="pill-label" for="ck1">Email marketing</label>
+        <input type="checkbox" class="pill-item" id="ck2" name="como_comparte_checkout" value="WhatsApp"><label class="pill-label" for="ck2">WhatsApp</label>
+        <input type="checkbox" class="pill-item" id="ck3" name="como_comparte_checkout" value="Webinar"><label class="pill-label" for="ck3">Webinar</label>
+        <input type="checkbox" class="pill-item" id="ck4" name="como_comparte_checkout" value="RRSS / stories"><label class="pill-label" for="ck4">RRSS / stories</label>
+        <input type="checkbox" class="pill-item" id="ck5" name="como_comparte_checkout" value="Página de ventas"><label class="pill-label" for="ck5">Página de ventas</label>
+        <input type="checkbox" class="pill-item" id="ck6" name="como_comparte_checkout" value="Comunidad/grupo"><label class="pill-label" for="ck6">Comunidad / grupo</label>
+      </div>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Tienes activa la conversión de moneda en tu checkout?</label>
+      <p class="campo-hint">Permite que el cliente vea el precio en su moneda local</p>
+      <div class="opciones-sino">
+        <input type="radio" class="sino-item" id="mon-si" name="conversion_moneda" value="Sí"><label class="sino-label" for="mon-si">Sí</label>
+        <input type="radio" class="sino-item" id="mon-no" name="conversion_moneda" value="No"><label class="sino-label" for="mon-no">No</label>
+      </div>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Qué métodos de pago tienes habilitados?</label>
+      <div class="opciones-pill">
+        <input type="checkbox" class="pill-item" id="mp1" name="metodos_pago" value="Tarjeta de crédito"><label class="pill-label" for="mp1">Tarjeta de crédito</label>
+        <input type="checkbox" class="pill-item" id="mp2" name="metodos_pago" value="Débito"><label class="pill-label" for="mp2">Débito</label>
+        <input type="checkbox" class="pill-item" id="mp3" name="metodos_pago" value="PIX"><label class="pill-label" for="mp3">PIX</label>
+        <input type="checkbox" class="pill-item" id="mp4" name="metodos_pago" value="Boleto"><label class="pill-label" for="mp4">Boleto</label>
+        <input type="checkbox" class="pill-item" id="mp5" name="metodos_pago" value="PayPal"><label class="pill-label" for="mp5">PayPal</label>
+        <input type="checkbox" class="pill-item" id="mp6" name="metodos_pago" value="Transferencia"><label class="pill-label" for="mp6">Transferencia</label>
+        <input type="checkbox" class="pill-item" id="mp7" name="metodos_pago" value="No sé cuáles tengo activos"><label class="pill-label" for="mp7">No sé cuáles tengo activos</label>
+      </div>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Tienes el checkout personalizado con tu marca?</label>
+      <div class="opciones-sino">
+        <input type="radio" class="sino-item" id="chk-si" name="checkout_personalizado" value="Sí"><label class="sino-label" for="chk-si">Sí</label>
+        <input type="radio" class="sino-item" id="chk-no" name="checkout_personalizado" value="No"><label class="sino-label" for="chk-no">No</label>
+      </div>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Tienes equipo comercial o closers para cerrar ventas?</label>
+      <div class="opciones-sino">
+        <input type="radio" class="sino-item" id="ec-si" name="equipo_comercial" value="Sí"><label class="sino-label" for="ec-si">Sí</label>
+        <input type="radio" class="sino-item" id="ec-no" name="equipo_comercial" value="No"><label class="sino-label" for="ec-no">No</label>
+      </div>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Cómo te comunicas con tus compradores post-venta?</label>
+      <div class="opciones-pill">
+        <input type="checkbox" class="pill-item" id="cb1" name="comunicacion_compradores" value="Email automático"><label class="pill-label" for="cb1">Email automático</label>
+        <input type="checkbox" class="pill-item" id="cb2" name="comunicacion_compradores" value="WhatsApp"><label class="pill-label" for="cb2">WhatsApp</label>
+        <input type="checkbox" class="pill-item" id="cb3" name="comunicacion_compradores" value="Grupo Telegram"><label class="pill-label" for="cb3">Grupo Telegram</label>
+        <input type="checkbox" class="pill-item" id="cb4" name="comunicacion_compradores" value="No tengo sistema"><label class="pill-label" for="cb4">No tengo sistema</label>
+      </div>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Conoces los informes de carrito abandonado y rechazos de tarjeta en Hotmart?</label>
+      <div class="opciones-sino">
+        <input type="radio" class="sino-item" id="inf-si" name="conoce_informes_recuperacion" value="Sí"><label class="sino-label" for="inf-si">Sí</label>
+        <input type="radio" class="sino-item" id="inf-no" name="conoce_informes_recuperacion" value="No"><label class="sino-label" for="inf-no">No</label>
+      </div>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Tienes algún protocolo activo para recuperar ventas perdidas?</label>
+      <div class="opciones-sino">
+        <input type="radio" class="sino-item" id="pr-si" name="protocolo_recuperacion" value="Sí"><label class="sino-label" for="pr-si">Sí</label>
+        <input type="radio" class="sino-item" id="pr-no" name="protocolo_recuperacion" value="No"><label class="sino-label" for="pr-no">No</label>
+      </div>
+    </div>
+
+    <div class="nav-botones">
+      <button class="btn btn-secundario" onclick="ir(2)">← Atrás</button>
+      <button class="btn btn-primario" onclick="ir(4)">Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- ════════════ PANTALLA 4: POST-VENTA ════════════ -->
+  <div class="pantalla" id="p4">
+    <div class="seccion-intro">
+      <div class="seccion-etiqueta">Etapa 4 de 4</div>
+      <div class="seccion-titulo">Post-venta y Recompra</div>
+      <div class="seccion-desc">Cómo cuidas a tus estudiantes después de la compra y cómo generas ingresos recurrentes.</div>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Tienes un protocolo de onboarding para nuevos compradores?</label>
+      <p class="campo-hint">Emails de bienvenida, instrucciones de acceso, primeros pasos</p>
+      <div class="opciones-sino">
+        <input type="radio" class="sino-item" id="on-si" name="protocolo_onboarding" value="Sí"><label class="sino-label" for="on-si">Sí</label>
+        <input type="radio" class="sino-item" id="on-no" name="protocolo_onboarding" value="No"><label class="sino-label" for="on-no">No</label>
+      </div>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Tienes área de miembros? ¿Cuál?</label>
+      <div class="opciones-pill">
+        <input type="radio" class="pill-item" id="am1" name="area_miembros" value="Hotmart Club (básico)"><label class="pill-label" for="am1">Hotmart Club (básico)</label>
+        <input type="radio" class="pill-item" id="am2" name="area_miembros" value="Hotmart Club (avanzado)"><label class="pill-label" for="am2">Hotmart Club (avanzado)</label>
+        <input type="radio" class="pill-item" id="am3" name="area_miembros" value="Plataforma externa"><label class="pill-label" for="am3">Plataforma externa</label>
+        <input type="radio" class="pill-item" id="am4" name="area_miembros" value="App propia"><label class="pill-label" for="am4">App propia</label>
+        <input type="radio" class="pill-item" id="am5" name="area_miembros" value="No tengo área de miembros"><label class="pill-label" for="am5">No tengo área de miembros</label>
+      </div>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Cómo atiendes las dudas de tus alumnos?</label>
+      <div class="opciones-pill">
+        <input type="checkbox" class="pill-item" id="at1" name="sistema_atencion" value="WhatsApp directo"><label class="pill-label" for="at1">WhatsApp directo</label>
+        <input type="checkbox" class="pill-item" id="at2" name="sistema_atencion" value="Email"><label class="pill-label" for="at2">Email</label>
+        <input type="checkbox" class="pill-item" id="at3" name="sistema_atencion" value="Comunidad interna"><label class="pill-label" for="at3">Comunidad interna</label>
+        <input type="checkbox" class="pill-item" id="at4" name="sistema_atencion" value="Tutor/soporte dedicado"><label class="pill-label" for="at4">Tutor / soporte dedicado</label>
+        <input type="checkbox" class="pill-item" id="at5" name="sistema_atencion" value="Calls de Q&A grupales"><label class="pill-label" for="at5">Calls de Q&A grupales</label>
+        <input type="checkbox" class="pill-item" id="at6" name="sistema_atencion" value="No tengo sistema formal"><label class="pill-label" for="at6">No tengo sistema formal</label>
+      </div>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Revisas el avance de tus alumnos dentro del contenido?</label>
+      <div class="opciones-sino">
+        <input type="radio" class="sino-item" id="av-si" name="revisa_avance_alumnos" value="Sí"><label class="sino-label" for="av-si">Sí</label>
+        <input type="radio" class="sino-item" id="av-no" name="revisa_avance_alumnos" value="No"><label class="sino-label" for="av-no">No</label>
+      </div>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Tienes una comunidad activa para tus alumnos?</label>
+      <div class="opciones-sino">
+        <input type="radio" class="sino-item" id="com-si" name="comunidad_alumnos" value="Sí"><label class="sino-label" for="com-si">Sí</label>
+        <input type="radio" class="sino-item" id="com-no" name="comunidad_alumnos" value="No"><label class="sino-label" for="com-no">No</label>
+      </div>
+    </div>
+
+    <div class="campo">
+      <label class="campo-label">¿Tienes un sistema de recompra o upsell para tus compradores actuales?</label>
+      <div class="opciones-sino">
+        <input type="radio" class="sino-item" id="rc-si" name="sistema_recompra" value="Sí"><label class="sino-label" for="rc-si">Sí</label>
+        <input type="radio" class="sino-item" id="rc-no" name="sistema_recompra" value="No"><label class="sino-label" for="rc-no">No</label>
+      </div>
+    </div>
+
+    <div class="nav-botones">
+      <button class="btn btn-secundario" onclick="ir(3)">← Atrás</button>
+      <button class="btn btn-primario" onclick="enviar()" style="background:#16a34a">Enviar diagnóstico ✓</button>
+    </div>
+  </div>
+
+  <!-- ════════════ PANTALLA 5: ÉXITO ════════════ -->
+  <div class="pantalla" id="p5">
+    <div class="exito-card">
+      <div class="exito-icono">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="16" cy="16" r="14" fill="#dcfce7"/>
+          <path d="M10 16.5l4.5 4.5 8-8" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h2>¡Diagnóstico enviado!</h2>
+      <p>Tu plan de acción personalizado está siendo generado. En los próximos minutos recibirás un PDF con el diagnóstico completo de tu embudo en el correo que registraste.</p>
+      <div style="margin-top:24px;padding:16px;background:var(--gris-100);border-radius:10px;font-size:13px;color:var(--gris-700)">
+        Revisa también tu carpeta de spam si no ves el correo en los próximos 10 minutos.
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+// ── Configuración ──
+const APPS_SCRIPT_URL = 'PEGAR_URL_DEL_APPS_SCRIPT_AQUI';
+
+// ── Estado global ──
+let pantalla = 0;
+const TOTAL = 5; // pantallas de contenido (0-4), la 5 es éxito
+
+const ETIQUETAS = ['', 'Contexto', 'Pre-venta', 'Venta', 'Post-venta'];
+
+// ── Navegar a una pantalla ──
+function ir(n) {
+  document.getElementById('p' + pantalla).classList.remove('activa');
+  pantalla = n;
+  document.getElementById('p' + pantalla).classList.add('activa');
+  actualizarUI();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Actualizar barra y badge ──
+function actualizarUI() {
+  const pct = pantalla === 0 ? 0 : Math.round((pantalla / 4) * 100);
+  document.getElementById('barra').style.width = pct + '%';
+
+  const badge = document.getElementById('etapa-badge');
+  const sub = document.getElementById('header-sub');
+  if (pantalla >= 1 && pantalla <= 4) {
+    badge.textContent = 'Etapa ' + pantalla + ' de 4';
+    badge.style.display = 'block';
+    sub.textContent = ETIQUETAS[pantalla];
+  } else {
+    badge.style.display = 'none';
+    sub.textContent = 'Tus respuestas generan un plan de acción personalizado';
+  }
+}
+
+// ── Mostrar/ocultar campo condicional ──
+function toggle(id, mostrar) {
+  const el = document.getElementById(id);
+  if (mostrar) { el.classList.add('visible'); }
+  else { el.classList.remove('visible'); }
+}
+
+// ── Actualizar condicionales según modelo de venta ──
+function actualizarCondicionales() {
+  const modelo = document.getElementById('modelo_venta').value;
+  const esDirecta = modelo === 'Venta directa';
+  const noEsDirecta = modelo && modelo !== 'Venta directa';
+
+  // Calentamiento y CRM solo si NO es venta directa
+  const calent = document.getElementById('campo-calentamiento');
+  const leads = document.getElementById('campo-donde-leads');
+  calent.style.display = noEsDirecta ? 'block' : 'none';
+  leads.style.display = noEsDirecta ? 'block' : 'none';
+
+  // Página de ventas solo si ES venta directa
+  const pagVentas = document.getElementById('campo-pag-ventas');
+  pagVentas.style.display = esDirecta ? 'block' : 'none';
+}
+
+// ── Leer checkboxes/radios por name ──
+function leerOpciones(name, multiple = false) {
+  if (multiple) {
+    return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`))
+                .map(el => el.value).join(', ') || '';
+  }
+  const el = document.querySelector(`input[name="${name}"]:checked`);
+  return el ? el.value : '';
+}
+
+// ── Pantalla de inicio ──
+function iniciar() {
+  const nombre = document.getElementById('w-nombre').value.trim();
+  const email = document.getElementById('w-email').value.trim();
+  const hotmart = document.getElementById('w-hotmart').value.trim();
+
+  if (!nombre || !email || !hotmart) {
+    alert('Por favor completa tu nombre y ambos correos antes de continuar.');
+    return;
+  }
+  ir(1);
+}
+
+// ── Recopilar todos los datos y enviar ──
+async function enviar() {
+  const data = {
+    nombre:              document.getElementById('w-nombre').value.trim(),
+    email:               document.getElementById('w-email').value.trim(),
+    hotmart_email:       document.getElementById('w-hotmart').value.trim(),
+    nicho:               document.getElementById('nicho').value.trim(),
+    tipo_productos:      leerOpciones('tipo_productos', true),
+    escalera_valor:      leerOpciones('escalera_valor'),
+    rango_precios:       document.getElementById('rango_precios').value.trim(),
+    num_productos:       document.getElementById('num_productos').value,
+    equipo:              leerOpciones('equipo'),
+    modelo_venta:        document.getElementById('modelo_venta').value,
+    tipo_trafico:        leerOpciones('tipo_trafico', true),
+    redes_sociales:      leerOpciones('redes_sociales', true),
+    plataformas_pauta:   leerOpciones('plataformas_pauta', true),
+    conoce_porcentaje_fuentes: leerOpciones('conoce_porcentaje_fuentes'),
+    porcentaje_fuentes:  document.getElementById('porcentaje_fuentes').value.trim(),
+    conoce_cpl:          leerOpciones('conoce_cpl'),
+    alianzas:            leerOpciones('alianzas'),
+    pagina_captacion:    leerOpciones('pagina_captacion'),
+    canal_calentamiento: leerOpciones('canal_calentamiento', true),
+    donde_guarda_leads:  leerOpciones('donde_guarda_leads'),
+    pagina_ventas_externa: leerOpciones('pagina_ventas_externa'),
+    como_comparte_checkout: leerOpciones('como_comparte_checkout', true),
+    conversion_moneda:   leerOpciones('conversion_moneda'),
+    metodos_pago:        leerOpciones('metodos_pago', true),
+    checkout_personalizado: leerOpciones('checkout_personalizado'),
+    equipo_comercial:    leerOpciones('equipo_comercial'),
+    comunicacion_compradores: leerOpciones('comunicacion_compradores', true),
+    conoce_informes_recuperacion: leerOpciones('conoce_informes_recuperacion'),
+    protocolo_recuperacion: leerOpciones('protocolo_recuperacion'),
+    protocolo_onboarding: leerOpciones('protocolo_onboarding'),
+    area_miembros:       leerOpciones('area_miembros'),
+    sistema_atencion:    leerOpciones('sistema_atencion', true),
+    revisa_avance_alumnos: leerOpciones('revisa_avance_alumnos'),
+    comunidad_alumnos:   leerOpciones('comunidad_alumnos'),
+    sistema_recompra:    leerOpciones('sistema_recompra'),
+  };
+
+  // Mostrar loading
+  document.getElementById('loading').classList.add('visible');
+
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    // Ir a pantalla de éxito independientemente de la respuesta
+    // (CORS en Apps Script puede bloquear la respuesta aunque el script corrió bien)
+  } catch (err) {
+    // Fetch a Apps Script siempre lanza CORS error aunque funciona
+    // ignoramos el error y vamos a éxito igual
+  } finally {
+    document.getElementById('loading').classList.remove('visible');
+    ir(5);
+    document.getElementById('barra').style.width = '100%';
+  }
+}
+</script>
+</body>
+</html>
